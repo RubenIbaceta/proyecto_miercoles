@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle en Español</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>WORDLE ES</h1>
+      <div class="user-bar">
+        <span>Jugador: <strong id="current-user-display">-</strong></span>
+        <button id="btn-change-user" class="btn-small">Cambiar Usuario</button>
+        <button id="btn-show-ranking" class="btn-small btn-secondary">🏆 Ranking</button>
+      </div>
+    </header>
+
+    <section class="controls-section">
+      <div class="length-selector">
+        <label>Longitud de palabra:</label>
+        <button class="btn-len active" data-len="5">5</button>
+        <button class="btn-len" data-len="6">6</button>
+        <button class="btn-len" data-len="7">7</button>
+        <button class="btn-len" data-len="8">8</button>
+      </div>
+      <button id="btn-new-game" class="btn-primary">Nueva Partida</button>
+    </section>
+
+    <main class="game-board-container">
+      <div id="grid-board" class="grid-board"></div>
+    </main>
+
+    <div id="message-container" class="message-container"></div>
+
+    <section class="keyboard-container" id="keyboard"></section>
+  </div>
+
+  <!-- Modal Usuario -->
+  <div id="modal-user" class="modal">
+    <div class="modal-content">
+      <h2>Bienvenido a Wordle</h2>
+      <p>Ingresa tu apodo para registrar tus puntuaciones:</p>
+      <input type="text" id="input-username" placeholder="Tu Apodo" maxlength="15" autofocus>
+      <button id="btn-save-user" class="btn-primary">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Modal Ranking -->
+  <div id="modal-ranking" class="modal">
+    <div class="modal-content modal-large">
+      <span class="close-modal" id="close-ranking">&times;</span>
+      <h2>🏆 Tabla de Posiciones (Top 10)</h2>
+      <table id="ranking-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador</th>
+            <th>Letras</th>
+            <th>Intentos</th>
+            <th>Puntos</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/words.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
