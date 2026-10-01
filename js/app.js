@@ -89,18 +89,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', handlePhysicalKeyPress);
   }
 
-  function startNewGame() {
-    const availableWords = WORDS[wordLength] || WORDS[5];
-    secretWord = availableWords[Math.floor(Math.random() * availableWords.length)].toUpperCase();
-    currentAttempt = 0;
-    currentGuess = '';
-    isGameOver = false;
-    startTime = Date.now();
-    messageContainer.textContent = '';
+async function startNewGame() {
+  isGameOver = true;
+  messageContainer.textContent = 'Obteniendo palabra... ⏳';
 
-    renderBoard();
-    resetKeyboardColors();
-  }
+  // Llama al servicio asíncrono
+  secretWord = await WordService.getRandomWord(wordLength);
+  
+  currentAttempt = 0;
+  currentGuess = '';
+  isGameOver = false;
+  startTime = Date.now();
+  messageContainer.textContent = '';
+
+  renderBoard();
+  resetKeyboardColors();
+}
 
   function renderBoard() {
     gridBoard.innerHTML = '';
@@ -299,3 +303,121 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Agrega esta función de Confeti nativo en JS al final de js/app.js
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = Array.from({ length: 120 }).map(() => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    size: Math.random() * 8 + 4,
+    color: ['#2ea043', '#d29922', '#58a6ff', '#f85149', '#a371f7'][Math.floor(Math.random() * 5)],
+    speedY: Math.random() * 3 + 2,
+    speedX: Math.random() * 2 - 1,
+    rotation: Math.random() * 360
+  }));
+
+  let animationFrame;
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rotation += 2;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    });
+
+    if (particles.some(p => p.y < canvas.height)) {
+      animationFrame = requestAnimationFrame(render);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cancelAnimationFrame(animationFrame);
+    }
+  }
+  render();
+}
+
+// Reemplaza addLetter en js/app.js para agregar la clase .pop
+function addLetter(letter) {
+  if (currentGuess.length < wordLength) {
+    currentGuess += letter;
+    const col = currentGuess.length - 1;
+    const tile = document.getElementById(`tile-${currentAttempt}-${col}`);
+    tile.textContent = letter;
+    tile.classList.add('filled', 'pop');
+    setTimeout(() => tile.classList.remove('pop'), 150);
+  }
+}
+
+// Reemplaza submitGuess para aplicar la animación Flip escalonada
+function submitGuess() {
+  if (currentGuess.length !== wordLength) {
+    messageContainer.textContent = `La palabra debe tener ${wordLength} letras.`;
+    return;
+  }
+
+  messageContainer.textContent = '';
+  const statusArray = evaluateGuess(currentGuess, secretWord);
+
+  for (let i = 0; i < wordLength; i++) {
+    const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
+    const status = statusArray[i];
+
+    // Animación escalonada (flip)
+    setTimeout(() => {
+      tile.classList.add('flip');
+      tile.classList.add(status);
+      updateKeyboardKey(currentGuess[i], status);
+    }, i * 200);
+  }
+
+  const delayTotal = wordLength * 200;
+
+  setTimeout(() => {
+    if (currentGuess === secretWord) {
+      // Aplicar baile a las letras ganadoras
+      for (let i = 0; i < wordLength; i++) {
+        const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
+        tile.classList.add('dance');
+      }
+      endGame(true);
+    } else {
+      currentAttempt++;
+      currentGuess = '';
+      if (currentAttempt >= maxAttempts) {
+        endGame(false);
+      }
+    }
+  }, delayTotal + 100);
+}
+
+// Actualiza endGame para activar el Confeti
+function endGame(won) {
+  isGameOver = true;
+  const elapsedSeconds = (Date.now() - startTime) / 1000;
+
+  if (won) {
+    const record = StorageModule.saveScore({
+      username: currentUsername || 'Jugador Anónimo',
+      wordLength,
+      attemptsUsed: currentAttempt + 1,
+      maxAttempts,
+      elapsedSeconds
+    });
+
+    launchConfetti();
+    messageContainer.innerHTML = `<span style="color: #3fb950;">¡VICTORIA! 🎉 Puntos: ${record.score}</span>`;
+  } else {
+    messageContainer.textContent = `¡Fin del juego! La palabra era: ${secretWord}`;
+  }
+}
